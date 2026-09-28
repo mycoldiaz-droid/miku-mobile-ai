@@ -60,7 +60,12 @@
             box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
         }
 
-        .config-btn {
+        .menu-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .action-btn {
             background: rgba(255, 255, 255, 0.08);
             border: 1px solid var(--border-color);
             color: #93c5fd;
@@ -71,7 +76,7 @@
             transition: background 0.2s;
         }
 
-        .config-btn:active { background: rgba(255, 255, 255, 0.15); }
+        .action-btn:active { background: rgba(255, 255, 255, 0.15); }
 
         #chat-container {
             flex: 1;
@@ -118,7 +123,6 @@
             border-bottom-left-radius: 4px;
         }
 
-        /* Animación de escribiendo moderna */
         .typing-dots {
             display: flex;
             gap: 4px;
@@ -190,14 +194,13 @@
             <div class="avatar-mini">🎧</div>
             <span>Miku Nakano</span>
         </div>
-        <button class="config-btn" onclick="gestionarApiKey()">⚙️ API Key</button>
+        <div class="menu-actions">
+            <button class="action-btn" onclick="nuevoChat()">🗑️ Nuevo</button>
+            <button class="action-btn" onclick="gestionarApiKey()">⚙️ Key</button>
+        </div>
     </header>
 
-    <div id="chat-container">
-        <div class="message-row assistant">
-            <div class="message assistant">¡Hola... soy Miku. ¿De qué te gustaría hablar hoy?</div>
-        </div>
-    </div>
+    <div id="chat-container"></div>
 
     <div class="input-area">
         <input type="text" id="user-input" placeholder="Escribe un mensaje a Miku..." autocomplete="off">
@@ -207,17 +210,38 @@
     <script>
         const MODEL_NAME = "gemini-3.8-flash";
         
-        // Historial de chat para mantener contexto fluido
-        let historialChat = [
-            {
-                role: "user",
-                parts: [{ text: "Instrucción de sistema: Eres Miku Nakano del anime Gotoubun no Hanayome. Eres tímida, reservada, te encantan los auriculares alrededor del cuello, la historia japonesa y hablas en español con un tono dulce, calmado y reservado." }]
-            },
-            {
-                role: "model",
-                parts: [{ text: "Entendido... Haré lo posible por hablar contigo con calma." }]
+        const promptSistema = {
+            role: "user",
+            parts: [{ text: "Instrucción de sistema: Eres Miku Nakano del anime Gotoubun no Hanayome. Eres tímida, reservada, te encantan los auriculares alrededor del cuello, la historia japonesa y hablas en español con un tono dulce, calmado y reservado." }]
+        };
+
+        const respuestaInicialSistema = {
+            role: "model",
+            parts: [{ text: "Entendido... Haré lo posible por hablar contigo con calma." }]
+        };
+
+        // Cargar historial guardado o iniciar uno nuevo
+        let historialChat = JSON.parse(localStorage.getItem("miku_chat_history")) || [promptSistema, respuestaInicialSistema];
+
+        const chatContainer = document.getElementById('chat-container');
+        const userInput = document.getElementById('user-input');
+
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') enviarMensaje();
+        });
+
+        function renderizarHistorialUI() {
+            chatContainer.innerHTML = '';
+            // Ocultar los mensajes internos de sistema al renderizar
+            for (let i = 2; i < historialChat.length; i++) {
+                const item = historialChat[i];
+                const rolUI = item.role === 'user' ? 'user' : 'assistant';
+                agregarMensajeUI(item.parts[0].text, rolUI, false);
             }
-        ];
+            if (historialChat.length <= 2) {
+                agregarMensajeUI("¡Hola... soy Miku. ¿De qué te gustaría hablar hoy?", 'assistant', false);
+            }
+        }
 
         function obtenerApiKey() {
             let key = localStorage.getItem("gemini_api_key");
@@ -237,12 +261,13 @@
             }
         }
 
-        const chatContainer = document.getElementById('chat-container');
-        const userInput = document.getElementById('user-input');
-
-        userInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') enviarMensaje();
-        });
+        function nuevoChat() {
+            if (confirm("¿Quieres borrar la conversación actual y empezar de nuevo?")) {
+                historialChat = [promptSistema, respuestaInicialSistema];
+                localStorage.removeItem("miku_chat_history");
+                renderizarHistorialUI();
+            }
+        }
 
         async function enviarMensaje() {
             const texto = userInput.value.trim();
@@ -254,14 +279,12 @@
                 return;
             }
 
-            // Mostrar mensaje del usuario
-            agregarMensajeUI(texto, 'user');
+            agregarMensajeUI(texto, 'user', true);
             userInput.value = '';
 
-            // Añadir al historial de la API
             historialChat.push({ role: "user", parts: [{ text: texto }] });
+            guardarHistorial();
 
-            // Mostrar indicador de "escribiendo..."
             const typingRowId = mostrarEscribiendo();
 
             try {
@@ -276,24 +299,23 @@
 
                 if (data.candidates && data.candidates[0].content) {
                     const respuestaMiku = data.candidates[0].content.parts[0].text;
-                    
-                    // Añadir respuesta al historial
                     historialChat.push({ role: "model", parts: [{ text: respuestaMiku }] });
+                    guardarHistorial();
 
-                    agregarMensajeUI(respuestaMiku, 'assistant');
+                    agregarMensajeUI(respuestaMiku, 'assistant', true);
                     reproducirVoz(respuestaMiku);
                 } else if (data.error) {
-                    agregarMensajeUI("Error de Google: " + data.error.message, 'assistant');
+                    agregarMensajeUI("Error de Google: " + data.error.message, 'assistant', false);
                 } else {
-                    agregarMensajeUI("No pude procesar la respuesta de la red.", 'assistant');
+                    agregarMensajeUI("No pude procesar la respuesta de la red.", 'assistant', false);
                 }
             } catch (error) {
                 removerEscribiendo(typingRowId);
-                agregarMensajeUI("Error de conexión. Comprueba tu red o tu API Key.", 'assistant');
+                agregarMensajeUI("Error de conexión. Comprueba tu red o tu API Key.", 'assistant', false);
             }
         }
 
-        function agregarMensajeUI(texto, remitente) {
+        function agregarMensajeUI(texto, remitente, guardar) {
             const row = document.createElement('div');
             row.className = `message-row ${remitente}`;
             
@@ -304,6 +326,10 @@
             row.appendChild(msg);
             chatContainer.appendChild(row);
             chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function guardarHistorial() {
+            localStorage.setItem("miku_chat_history", JSON.stringify(historialChat));
         }
 
         function mostrarEscribiendo() {
@@ -328,20 +354,39 @@
         }
 
         function reproducirVoz(texto) {
-            if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
-                let limpio = texto.replace(/[\*\_\`]/g, '');
-                let utterance = new SpeechSynthesisUtterance(limpio);
-                utterance.lang = 'es-ES';
-                utterance.rate = 1.05;
-                utterance.pitch = 1.4; // Tono más juvenil/femenino
-                window.speechSynthesis.speak(utterance);
-            }
+    if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        let limpio = texto.replace(/[\*\_\`]/g, '');
+        let utterance = new SpeechSynthesisUtterance(limpio);
+        utterance.lang = 'es-ES'; // Idioma español
+        utterance.rate = 1.05;
+        utterance.pitch = 1.4; // Tono más agudo
+
+        // Buscar específicamente una voz de mujer en el dispositivo
+        let voces = window.speechSynthesis.getVoices();
+        let vozFemenina = voces.find(v => v.lang.startsWith('es') && (v.name.toLowerCase().includes('female') || v.name.toLowerCase().includes('zira') || v.name.toLowerCase().includes('helena') || v.name.toLowerCase().includes('laura') || v.name.toLowerCase().includes('sofia') || v.name.toLowerCase().includes('google español')));
+        
+        if (vozFemenina) {
+            utterance.voice = vozFemenina;
+        } else {
+            // Si no encuentra una con nombre específico, busca cualquier voz en español disponible
+            let vozEspañol = voces.find(v => v.lang.startsWith('es'));
+            if (vozEspañol) utterance.voice = vozEspañol;
         }
-    </script>
-</body>
-</html>
-        }
+
+        window.speechSynthesis.speak(utterance);
+    }
+}
+
+// Asegurar que las voces carguen correctamente en móviles
+if ('speechSynthesis' in window) {
+    window.speechSynthesis.onvoiceschanged = () => {
+        window.speechSynthesis.getVoices();
+    };
+}
+
+        // Renderizar al cargar la página
+        renderizarHistorialUI();
     </script>
 </body>
 </html>
