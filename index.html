@@ -31,7 +31,8 @@
         header {
             background: var(--header-bg);
             backdrop-filter: blur(12px);
-            padding: 10px 16px;
+            -webkit-backdrop-filter: blur(12px);
+            padding: 12px 16px;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -44,39 +45,38 @@
             align-items: center;
             gap: 10px;
             font-weight: 600;
-            font-size: 1rem;
+            font-size: 1.05rem;
         }
 
-        .menu-actions { display: flex; gap: 8px; }
+        .avatar-mini {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #3b82f6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+        }
+
+        .menu-actions {
+            display: flex;
+            gap: 8px;
+        }
 
         .action-btn {
             background: rgba(255, 255, 255, 0.08);
             border: 1px solid var(--border-color);
             color: #93c5fd;
-            padding: 5px 10px;
+            padding: 6px 12px;
             border-radius: 20px;
-            font-size: 0.8rem;
+            font-size: 0.85rem;
             cursor: pointer;
+            transition: background 0.2s;
         }
 
-        /* --- CONTENEDOR FLOTANTE PARA EL AVATAR DIRECTO --- */
-        .pet-container {
-            position: fixed;
-            bottom: 75px; 
-            right: 15px;  
-            z-index: 100;
-            width: 90px; 
-            height: 90px;
-            pointer-events: none; 
-            filter: drop-shadow(0 4px 10px rgba(0,0,0,0.6));
-        }
-
-        .pet-container img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-        }
-        /* ----------------------------------------------- */
+        .action-btn:active { background: rgba(255, 255, 255, 0.15); }
 
         #chat-container {
             flex: 1;
@@ -86,10 +86,16 @@
             flex-direction: column;
             gap: 14px;
             scroll-behavior: smooth;
-            background: rgba(11, 15, 25, 0.85);
+            background: linear-gradient(rgba(11, 15, 25, 0.82), rgba(11, 15, 25, 0.82)), url('img/fondo_miku.png');
+            background-size: cover;
+            background-position: center;
         }
 
-        .message-row { display: flex; width: 100%; }
+        .message-row {
+            display: flex;
+            width: 100%;
+        }
+
         .message-row.user { justify-content: flex-end; }
         .message-row.assistant { justify-content: flex-start; }
 
@@ -100,24 +106,33 @@
             font-size: 0.95rem;
             line-height: 1.5;
             word-wrap: break-word;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
 
         .message.user {
-            background: #2563eb;
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
             color: white;
             border-bottom-right-radius: 4px;
         }
 
         .message.assistant {
             background: var(--bubble-ai);
+            backdrop-filter: blur(8px);
             border: 1px solid var(--border-color);
             color: #f1f5f9;
             border-bottom-left-radius: 4px;
         }
 
-        .typing-dots { display: flex; gap: 4px; padding: 4px 0; }
+        .typing-dots {
+            display: flex;
+            gap: 4px;
+            padding: 4px 0;
+        }
         .typing-dots span {
-            width: 7px; height: 7px; background: #94a3b8; border-radius: 50%;
+            width: 7px;
+            height: 7px;
+            background: #94a3b8;
+            border-radius: 50%;
             animation: bounce 1.4s infinite ease-in-out both;
         }
         .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
@@ -129,13 +144,12 @@
         }
 
         .input-area {
-            padding: 10px 16px;
+            padding: 12px 16px;
             background: var(--header-bg);
             backdrop-filter: blur(12px);
             display: flex;
             gap: 10px;
             border-top: 1px solid var(--border-color);
-            z-index: 105;
         }
 
         input[type="text"] {
@@ -143,10 +157,16 @@
             background: rgba(255, 255, 255, 0.06);
             border: 1px solid var(--border-color);
             border-radius: 24px;
-            padding: 10px 18px;
+            padding: 12px 18px;
             color: white;
             font-size: 0.95rem;
             outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input[type="text"]:focus {
+            border-color: #3b82f6;
+            background: rgba(255, 255, 255, 0.09);
         }
 
         button.send-btn {
@@ -154,9 +174,16 @@
             color: white;
             border: none;
             border-radius: 24px;
-            padding: 0 18px;
+            padding: 0 20px;
             font-weight: 600;
+            font-size: 0.95rem;
             cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+        }
+
+        button.send-btn:active {
+            transform: scale(0.96);
+            background: #2563eb;
         }
     </style>
 </head>
@@ -164,7 +191,8 @@
 
     <header>
         <div class="brand">
-            <span>🎧 Miku AI</span>
+            <div class="avatar-mini">🎧</div>
+            <span>Miku Nakano</span>
         </div>
         <div class="menu-actions">
             <button class="action-btn" onclick="nuevoChat()">🗑️ Nuevo</button>
@@ -172,15 +200,10 @@
         </div>
     </header>
 
-    <!-- AVATAR USANDO ENLACE DIRECTO DE IMAGEN GIF -->
-    <div class="pet-container">
-        <img src="https://media1.tenor.com/m/rT4-G6w9kEAAAAAC/miku-quintessential.gif" alt="Miku Avatar">
-    </div>
-
     <div id="chat-container"></div>
 
     <div class="input-area">
-        <input type="text" id="user-input" placeholder="Escribe a Miku..." autocomplete="off">
+        <input type="text" id="user-input" placeholder="Escribe un mensaje a Miku..." autocomplete="off">
         <button class="send-btn" onclick="enviarMensaje()">Enviar</button>
     </div>
 
@@ -189,14 +212,15 @@
         
         const promptSistema = {
             role: "user",
-            parts: [{ text: "Instrucción de sistema: Eres Miku Nakano del anime Gotoubun no Hanayome. Eres tímida, reservada, te encantan los auriculares, y hablas en español con un tono dulce y calmado." }]
+            parts: [{ text: "Instrucción de sistema: Eres Miku Nakano del anime Gotoubun no Hanayome. Eres tímida, reservada, te encantan los auriculares alrededor del cuello, la historia japonesa y hablas en español con un tono dulce, calmado y reservado." }]
         };
 
         const respuestaInicialSistema = {
             role: "model",
-            parts: [{ text: "Hola... aquí estaré contigo." }]
+            parts: [{ text: "Entendido... Haré lo posible por hablar contigo con calma." }]
         };
 
+        // Cargar historial guardado o iniciar uno nuevo
         let historialChat = JSON.parse(localStorage.getItem("miku_chat_history")) || [promptSistema, respuestaInicialSistema];
 
         const chatContainer = document.getElementById('chat-container');
@@ -208,19 +232,21 @@
 
         function renderizarHistorialUI() {
             chatContainer.innerHTML = '';
+            // Ocultar los mensajes internos de sistema al renderizar
             for (let i = 2; i < historialChat.length; i++) {
                 const item = historialChat[i];
-                agregarMensajeUI(item.parts[0].text, item.role === 'user' ? 'user' : 'assistant');
+                const rolUI = item.role === 'user' ? 'user' : 'assistant';
+                agregarMensajeUI(item.parts[0].text, rolUI, false);
             }
             if (historialChat.length <= 2) {
-                agregarMensajeUI("¡Hola... ¿De qué te gustaría hablar hoy?", 'assistant');
+                agregarMensajeUI("¡Hola... soy Miku. ¿De qué te gustaría hablar hoy?", 'assistant', false);
             }
         }
 
         function obtenerApiKey() {
             let key = localStorage.getItem("gemini_api_key");
             if (!key) {
-                key = prompt("Introduce tu API Key de Google AI Studio:");
+                key = prompt("Por favor, introduce tu API Key de Google AI Studio:");
                 if (key) localStorage.setItem("gemini_api_key", key.trim());
             }
             return key;
@@ -228,12 +254,15 @@
 
         function gestionarApiKey() {
             let actual = localStorage.getItem("gemini_api_key") || "";
-            let nueva = prompt("Actualiza tu API Key:", actual);
-            if (nueva !== null) localStorage.setItem("gemini_api_key", nueva.trim());
+            let nueva = prompt("Actualiza tu API Key de Google AI Studio:", actual);
+            if (nueva !== null) {
+                localStorage.setItem("gemini_api_key", nueva.trim());
+                alert("¡API Key actualizada con éxito!");
+            }
         }
 
         function nuevoChat() {
-            if (confirm("¿Borrar chat actual?")) {
+            if (confirm("¿Quieres borrar la conversación actual y empezar de nuevo?")) {
                 historialChat = [promptSistema, respuestaInicialSistema];
                 localStorage.removeItem("miku_chat_history");
                 renderizarHistorialUI();
@@ -245,14 +274,18 @@
             if (!texto) return;
 
             const API_KEY = obtenerApiKey();
-            if (!API_KEY) return;
+            if (!API_KEY) {
+                alert("Se requiere una API Key para chatear.");
+                return;
+            }
 
-            agregarMensajeUI(texto, 'user');
+            agregarMensajeUI(texto, 'user', true);
             userInput.value = '';
+
             historialChat.push({ role: "user", parts: [{ text: texto }] });
             guardarHistorial();
 
-            const typingId = mostrarEscribiendo();
+            const typingRowId = mostrarEscribiendo();
 
             try {
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${API_KEY}`, {
@@ -262,29 +295,34 @@
                 });
 
                 const data = await response.json();
-                removerEscribiendo(typingId);
+                removerEscribiendo(typingRowId);
 
                 if (data.candidates && data.candidates[0].content) {
                     const respuestaMiku = data.candidates[0].content.parts[0].text;
                     historialChat.push({ role: "model", parts: [{ text: respuestaMiku }] });
                     guardarHistorial();
-                    agregarMensajeUI(respuestaMiku, 'assistant');
+
+                    agregarMensajeUI(respuestaMiku, 'assistant', true);
                     reproducirVoz(respuestaMiku);
+                } else if (data.error) {
+                    agregarMensajeUI("Error de Google: " + data.error.message, 'assistant', false);
                 } else {
-                    agregarMensajeUI("Error de respuesta de la API.", 'assistant');
+                    agregarMensajeUI("No pude procesar la respuesta de la red.", 'assistant', false);
                 }
             } catch (error) {
-                removerEscribiendo(typingId);
-                agregarMensajeUI("Error de red.", 'assistant');
+                removerEscribiendo(typingRowId);
+                agregarMensajeUI("Error de conexión. Comprueba tu red o tu API Key.", 'assistant', false);
             }
         }
 
-        function agregarMensajeUI(texto, remitente) {
+        function agregarMensajeUI(texto, remitente, guardar) {
             const row = document.createElement('div');
             row.className = `message-row ${remitente}`;
+            
             const msg = document.createElement('div');
             msg.className = `message ${remitente}`;
             msg.innerText = texto;
+            
             row.appendChild(msg);
             chatContainer.appendChild(row);
             chatContainer.scrollTop = chatContainer.scrollHeight;
@@ -299,7 +337,12 @@
             const row = document.createElement('div');
             row.className = `message-row assistant`;
             row.id = rowId;
-            row.innerHTML = `<div class="message assistant"><div class="typing-dots"><span></span><span></span><span></span></div></div>`;
+
+            const msg = document.createElement('div');
+            msg.className = `message assistant`;
+            msg.innerHTML = `<div class="typing-dots"><span></span><span></span><span></span></div>`;
+            
+            row.appendChild(msg);
             chatContainer.appendChild(row);
             chatContainer.scrollTop = chatContainer.scrollHeight;
             return rowId;
@@ -311,34 +354,38 @@
         }
 
         function reproducirVoz(texto) {
-            if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
-                let limpio = texto.replace(/[\*\_\`]/g, '');
-                let utterance = new SpeechSynthesisUtterance(limpio);
-                utterance.lang = 'es-ES';
-                utterance.rate = 1.05;
-                utterance.pitch = 1.4;
+    if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        let limpio = texto.replace(/[\*\_\`]/g, '');
+        let utterance = new SpeechSynthesisUtterance(limpio);
+        utterance.lang = 'es-ES'; // Idioma español
+        utterance.rate = 1.05;
+        utterance.pitch = 1.4; // Tono más agudo
 
-                let voces = window.speechSynthesis.getVoices();
-                let vozFemenina = voces.find(v => v.lang.startsWith('es') && (v.name.toLowerCase().includes('female') || v.name.toLowerCase().includes('zira') || v.name.toLowerCase().includes('helena') || v.name.toLowerCase().includes('laura') || v.name.toLowerCase().includes('sofia') || v.name.toLowerCase().includes('google español')));
-                
-                if (vozFemenina) {
-                    utterance.voice = vozFemenina;
-                } else {
-                    let vozEspañol = voces.find(v => v.lang.startsWith('es'));
-                    if (vozEspañol) utterance.voice = vozEspañol;
-                }
-
-                window.speechSynthesis.speak(utterance);
-            }
+        // Buscar específicamente una voz de mujer en el dispositivo
+        let voces = window.speechSynthesis.getVoices();
+        let vozFemenina = voces.find(v => v.lang.startsWith('es') && (v.name.toLowerCase().includes('female') || v.name.toLowerCase().includes('zira') || v.name.toLowerCase().includes('helena') || v.name.toLowerCase().includes('laura') || v.name.toLowerCase().includes('sofia') || v.name.toLowerCase().includes('google español')));
+        
+        if (vozFemenina) {
+            utterance.voice = vozFemenina;
+        } else {
+            // Si no encuentra una con nombre específico, busca cualquier voz en español disponible
+            let vozEspañol = voces.find(v => v.lang.startsWith('es'));
+            if (vozEspañol) utterance.voice = vozEspañol;
         }
 
-        if ('speechSynthesis' in window) {
-            window.speechSynthesis.onvoiceschanged = () => {
-                window.speechSynthesis.getVoices();
-            };
-        }
+        window.speechSynthesis.speak(utterance);
+    }
+}
 
+// Asegurar que las voces carguen correctamente en móviles
+if ('speechSynthesis' in window) {
+    window.speechSynthesis.onvoiceschanged = () => {
+        window.speechSynthesis.getVoices();
+    };
+}
+
+        // Renderizar al cargar la página
         renderizarHistorialUI();
     </script>
 </body>
