@@ -59,39 +59,17 @@
             cursor: pointer;
         }
 
-        /* --- CONTENEDOR DEL AVATAR ANIMADO (CAMINANDO) --- */
+        /* --- CONTENEDOR FLOTANTE PARA EL GIF DE TENOR --- */
         .pet-container {
-            <div class="tenor-gif-embed" data-postid="20880400" data-share-method="host" data-aspect-ratio="1.45455" data-width="100%"><a href="https://tenor.com/view/miku-quintessential-the-quintuplets-gif-20880400">Miku Quintessential Sticker</a>from <a href="https://tenor.com/search/miku-stickers">Miku Stickers</a></div> <script type="text/javascript" async src="https://tenor.com/embed.js"></script>
-            position: absolute;
-            bottom: 65px; /* Justo arriba de la barra de texto */
-            left: 0;
+            position: fixed;
+            bottom: 75px; /* Arriba de la barra de chat */
+            right: 15px;  /* Esquina inferior derecha */
             z-index: 100;
-            pointer-events: none; /* Para que puedas hacer clic a través de ella */
-            animation: caminarPantalla 12s infinite alternate linear;
+            width: 100px; /* Tamaño del avatar */
+            pointer-events: none; /* Permite hacer clic a través de él */
+            filter: drop-shadow(0 4px 10px rgba(0,0,0,0.5));
         }
-
-        .pet-avatar {
-            width: 75px;
-            height: 75px;
-            object-fit: contain;
-            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4));
-        }
-
-        @keyframes caminarPantalla {
-            0% { 
-                transform: translateX(-10px) scaleX(1); 
-            }
-            49% { 
-                transform: translateX(calc(100vw - 80px)) scaleX(1); 
-            }
-            50% { 
-                transform: translateX(calc(100vw - 80px)) scaleX(-1); /* Gira hacia la izquierda */
-            }
-            100% { 
-                transform: translateX(-10px) scaleX(-1); 
-            }
-        }
-        /* ------------------------------------------------ */
+        /* ----------------------------------------------- */
 
         #chat-container {
             flex: 1;
@@ -179,7 +157,7 @@
 
     <header>
         <div class="brand">
-            <span>🎧 Miku AI Desktop</span>
+            <span>🎧 Miku AI</span>
         </div>
         <div class="menu-actions">
             <button class="action-btn" onclick="nuevoChat()">🗑️ Nuevo</button>
@@ -187,9 +165,12 @@
         </div>
     </header>
 
-    <!-- AVATAR QUE CAMINA POR LA PANTALLA -->
+    <!-- AVATAR INTEGRADO CON TU GIF DE TENOR -->
     <div class="pet-container">
-        <img src="img/miku_walk.gif" alt="Miku caminando" class="pet-avatar" id="pet-sprite">
+        <div class="tenor-gif-embed" data-postid="20880400" data-share-method="host" data-aspect-ratio="1.45455" data-width="100%">
+            <a href="https://tenor.com/view/miku-quintessential-the-quintuplets-gif-20880400">Miku Quintessential Sticker</a>
+        </div>
+        <script type="text/javascript" async src="https://tenor.com/embed.js"></script>
     </div>
 
     <div id="chat-container"></div>
@@ -209,7 +190,7 @@
 
         const respuestaInicialSistema = {
             role: "model",
-            parts: [{ text: "Entendido... Aquí estaré caminando por tu pantalla." }]
+            parts: [{ text: "Hola... aquí estaré contigo." }]
         };
 
         let historialChat = JSON.parse(localStorage.getItem("miku_chat_history")) || [promptSistema, respuestaInicialSistema];
@@ -228,7 +209,7 @@
                 agregarMensajeUI(item.parts[0].text, item.role === 'user' ? 'user' : 'assistant');
             }
             if (historialChat.length <= 2) {
-                agregarMensajeUI("¡Hola... estoy paseando por aquí. ¿De qué hablamos?", 'assistant');
+                agregarMensajeUI("¡Hola... ¿De qué te gustaría hablar hoy?", 'assistant');
             }
         }
 
@@ -242,7 +223,7 @@
         }
 
         function gestionarApiKey() {
-            let actual = localStorage.getItem("gemini_api_key") / "" || "";
+            let actual = localStorage.getItem("gemini_api_key") || "";
             let nueva = prompt("Actualiza tu API Key:", actual);
             if (nueva !== null) localStorage.setItem("gemini_api_key", nueva.trim());
         }
@@ -325,14 +306,34 @@
             if (el) el.remove();
         }
 
+        // Función de voz optimizada con filtro de voz femenina y tono adecuado
         function reproducirVoz(texto) {
             if ('speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
-                let utterance = new SpeechSynthesisUtterance(texto.replace(/[\*\_\`]/g, ''));
+                let limpio = texto.replace(/[\*\_\`]/g, '');
+                let utterance = new SpeechSynthesisUtterance(limpio);
                 utterance.lang = 'es-ES';
-                utterance.pitch = 1.4;
+                utterance.rate = 1.05;
+                utterance.pitch = 1.4; // Tono más agudo
+
+                let voces = window.speechSynthesis.getVoices();
+                let vozFemenina = voces.find(v => v.lang.startsWith('es') && (v.name.toLowerCase().includes('female') || v.name.toLowerCase().includes('zira') || v.name.toLowerCase().includes('helena') || v.name.toLowerCase().includes('laura') || v.name.toLowerCase().includes('sofia') || v.name.toLowerCase().includes('google español')));
+                
+                if (vozFemenina) {
+                    utterance.voice = vozFemenina;
+                } else {
+                    let vozEspañol = voces.find(v => v.lang.startsWith('es'));
+                    if (vozEspañol) utterance.voice = vozEspañol;
+                }
+
                 window.speechSynthesis.speak(utterance);
             }
+        }
+
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.onvoiceschanged = () => {
+                window.speechSynthesis.getVoices();
+            };
         }
 
         renderizarHistorialUI();
